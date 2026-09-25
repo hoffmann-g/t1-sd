@@ -1,0 +1,14 @@
+# run output
+/run/
+mxOUT.txt
+snapshots/
+
+# binaries
+/dimex
+/checker
+/runner
+*.exe
+
+# OS files
+.DS_Store
+__MACOSX/
