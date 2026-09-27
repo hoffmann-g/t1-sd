@@ -1,0 +1,1184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DiMEx Timeline</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.10);
+  --wash: rgba(11, 11, 11, 0.04);
+  --req: #2a78d6;
+  --ok: #eb6834;
+  --in: #1baf7a;
+  --want: #eda100;
+  --cut: #e87ba4;
+  --marker: #4a3aa7;
+  --critical: #d03b3b;
+  --good: #006300;
+  --critical-wash: rgba(208, 59, 59, 0.12);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.10);
+    --wash: rgba(255, 255, 255, 0.05);
+    --req: #3987e5;
+    --ok: #d95926;
+    --in: #199e70;
+    --want: #c98500;
+    --cut: #d55181;
+    --marker: #9085e9;
+    --good: #0ca30c;
+    --critical-wash: rgba(208, 59, 59, 0.22);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --ink: #ffffff;
+  --ink-2: #c3c2b7;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.10);
+  --wash: rgba(255, 255, 255, 0.05);
+  --req: #3987e5;
+  --ok: #d95926;
+  --in: #199e70;
+  --want: #c98500;
+  --cut: #d55181;
+  --marker: #9085e9;
+  --good: #0ca30c;
+  --critical-wash: rgba(208, 59, 59, 0.22);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+main { max-width: 1400px; margin: 0 auto; padding: 16px; display: grid; gap: 12px; }
+header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+h1 { font-size: 18px; margin: 0; font-weight: 600; }
+h2 { font-size: 13px; margin: 0 0 8px; font-weight: 600; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.04em; }
+.status { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.status b { color: var(--ink); font-weight: 600; }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; min-width: 0; }
+
+form.controls { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: end; }
+.field { display: grid; gap: 2px; }
+.field span { font-size: 12px; color: var(--ink-2); }
+.field input, .field select {
+  font: inherit; color: var(--ink); background: var(--page);
+  border: 1px solid var(--border); border-radius: 6px; padding: 4px 6px; width: 96px;
+}
+.field select { width: 200px; }
+.buttons { display: flex; gap: 6px; flex-wrap: wrap; }
+button {
+  font: inherit; color: var(--ink); background: var(--page);
+  border: 1px solid var(--border); border-radius: 6px; padding: 5px 12px; cursor: pointer;
+}
+button:hover { background: var(--wash); }
+button.primary { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+button.primary:hover { opacity: 0.88; }
+button:disabled { opacity: 0.45; cursor: default; }
+.sep { width: 1px; align-self: stretch; background: var(--border); }
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--ink-2); align-items: center; }
+.legend i { display: inline-block; vertical-align: middle; margin-right: 6px; }
+.legend .lg {
+  font: inherit; font-size: 12px; color: var(--ink-2); background: none;
+  border: 1px solid transparent; border-radius: 6px; padding: 2px 6px; cursor: pointer;
+}
+.legend .lg:hover { background: var(--wash); border-color: var(--border); }
+.legend .sw-x { color: var(--critical); font-weight: 700; margin-right: 6px; }
+.legend .lg[aria-pressed="false"] { opacity: 0.4; text-decoration: line-through; }
+.sw-band { width: 18px; height: 10px; border-radius: 3px; }
+.sw-line { width: 22px; height: 0; border-top: 2px solid; }
+.sw-dash { width: 22px; height: 0; border-top: 2px dashed; }
+.tlbar { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; padding: 8px 12px 0; }
+.tlbar .hint { font-size: 12px; color: var(--muted); margin-right: auto; }
+.zoom { display: flex; align-items: center; gap: 4px; }
+.zoom button { padding: 3px 10px; min-width: 32px; }
+.zoom .level { min-width: 64px; text-align: center; font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+.timeline { position: relative; padding: 0; overflow: hidden; }
+canvas { display: block; width: 100%; touch-action: none; }
+.tooltip {
+  position: absolute; pointer-events: none; display: none; z-index: 2;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--border);
+  border-radius: 6px; padding: 6px 8px; font-size: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  max-width: 320px; white-space: pre-line; font-variant-numeric: tabular-nums;
+}
+
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 12px; }
+@media (max-width: 900px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+
+.procs { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
+.proc { border: 1px solid var(--border); border-radius: 6px; padding: 8px; font-size: 12px; color: var(--ink-2); }
+.proc .name { font-size: 14px; font-weight: 600; color: var(--ink); display: flex; align-items: center; gap: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 5px; font-weight: 500; font-size: 12px; color: var(--ink); }
+.chip i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.proc dl { margin: 6px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 1px 8px; }
+.proc dt { color: var(--muted); }
+.proc dd { margin: 0; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+.snaps-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.snaps-head label { font-size: 12px; color: var(--ink-2); margin-left: auto; }
+.summary { font-size: 12px; color: var(--ink-2); margin-bottom: 8px; }
+.summary .bad { color: var(--critical); font-weight: 600; }
+.snaplist { max-height: 180px; overflow: auto; border: 1px solid var(--border); border-radius: 6px; }
+.snaprow { display: flex; gap: 10px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--border); }
+.snaprow:last-child { border-bottom: 0; }
+.snaprow:hover { background: var(--wash); }
+.snaprow.sel { background: var(--wash); font-weight: 600; }
+.snaprow .id { width: 44px; color: var(--ink); }
+.snaprow .t { width: 64px; color: var(--muted); }
+.snaprow .res { color: var(--good); }
+.snaprow .res.bad { color: var(--critical); }
+.detail { margin-top: 10px; font-size: 12px; }
+.detail .empty { color: var(--muted); }
+
+table { border-collapse: collapse; width: 100%; font-size: 12px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 3px 8px 3px 0; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { color: var(--ink-2); font-weight: 500; }
+.invs { margin-top: 8px; display: grid; gap: 2px; }
+.inv { display: flex; gap: 8px; }
+.inv .mark { width: 16px; font-weight: 700; }
+.inv.ok .mark { color: var(--good); }
+.inv.bad .mark { color: var(--critical); }
+.inv.bad { color: var(--critical); }
+.inv .nm { width: 36px; font-weight: 600; }
+
+.tape-head { display: flex; align-items: baseline; gap: 6px 16px; flex-wrap: wrap; margin-bottom: 8px; }
+.tape-head h2 { margin: 0; }
+.tape-head .stats { font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.tape-head .stats .bad { color: var(--critical); font-weight: 600; }
+.tape-head .stats .good { color: var(--good); }
+.tape-head label { font-size: 12px; color: var(--ink-2); margin-left: auto; }
+.tape { display: flex; align-items: stretch; overflow-x: auto; padding: 2px 0 8px; min-height: 58px; }
+.tape .empty { color: var(--muted); font-size: 12px; align-self: center; }
+.cell {
+  flex: none; width: 24px; display: grid; justify-items: center; align-content: center; gap: 2px;
+  margin-right: 2px; padding: 3px 0; border-radius: 4px; border: 1px solid transparent;
+  background: var(--wash); color: var(--ink); cursor: pointer;
+  font: 700 18px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, "DejaVu Sans Mono", monospace;
+}
+.cell.dot { margin-right: 8px; }       /* separates the "|." pairs */
+.cell sub { font: 10px/1 system-ui, sans-serif; color: var(--muted); }
+.cell.out { opacity: 0.4; }            /* outside the range visible in the timeline */
+.cell:hover, .cell.hl { border-color: var(--ink-2); opacity: 1; }
+.cell.bad { background: var(--critical-wash); border-color: var(--critical); color: var(--critical); opacity: 1; }
+.cell.bad sub { color: var(--critical); }
+details summary { cursor: pointer; font-weight: 600; font-size: 13px; color: var(--ink-2); }
+.log { max-height: 260px; overflow: auto; margin-top: 8px; }
+.error { color: var(--critical); font-size: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>DiMEx: execution timeline</h1>
+    <span class="status" id="status">connecting…</span>
+  </header>
+
+  <section class="card">
+    <form class="controls" id="form">
+      <label class="field"><span>Processes</span><input name="n" type="number" min="2" max="8" value="3"></label>
+      <label class="field"><span>Fault</span>
+        <select name="fault">
+          <option value="none">none (correct algorithm)</option>
+          <option value="mutex">mutex (breaks exclusion)</option>
+          <option value="block">block (deadlocks)</option>
+        </select>
+      </label>
+      <label class="field"><span>Latency (ms)</span><input name="latencyMs" type="number" min="0" value="200"></label>
+      <label class="field"><span>Time in CS (ms)</span><input name="csMs" type="number" min="0" value="800"></label>
+      <label class="field"><span>Outside CS (ms)</span><input name="thinkMs" type="number" min="0" value="900"></label>
+      <label class="field"><span>Snapshot interval (ms)</span><input name="snapEveryMs" type="number" min="0" value="1000"></label>
+      <div class="buttons">
+        <button class="primary" type="submit">Start</button>
+        <button type="button" id="stop">Stop</button>
+        <button type="button" id="snap">Snapshot now</button>
+      </div>
+      <div class="sep"></div>
+      <label class="field"><span>Window (s)</span><input id="window" type="number" min="0.2" max="3600" step="any" value="12"></label>
+      <div class="buttons"><button type="button" id="follow">Pause view</button></div>
+      <span class="error" id="error"></span>
+    </form>
+  </section>
+
+  <section class="card timeline" id="tlcard">
+    <div class="legend" style="padding: 10px 12px 0">
+      <button type="button" class="lg" data-layer="want" aria-pressed="true" title="Show or hide in the chart"><i class="sw-band" style="background: var(--want)"></i>wantMX (requested the CS)</button>
+      <button type="button" class="lg" data-layer="in" aria-pressed="true" title="Show or hide in the chart"><i class="sw-band" style="background: var(--in)"></i>inMX (in the CS)</button>
+      <button type="button" class="lg" data-layer="req" aria-pressed="true" title="Show or hide in the chart"><i class="sw-line" style="border-color: var(--req)"></i>req</button>
+      <button type="button" class="lg" data-layer="ok" aria-pressed="true" title="Show or hide in the chart"><i class="sw-line" style="border-color: var(--ok)"></i>ok</button>
+      <button type="button" class="lg" data-layer="marker" aria-pressed="true" title="Show or hide in the chart"><i class="sw-dash" style="border-color: var(--marker)"></i>marker</button>
+      <button type="button" class="lg" data-layer="cut" aria-pressed="true" title="Show or hide in the chart"><i class="sw-line" style="border-color: var(--cut); border-top-width: 3px"></i>snapshot cut</button>
+      <button type="button" class="lg" data-layer="viol" aria-pressed="true" title="Show or hide in the chart"><i class="sw-band" style="background: var(--critical-wash); border: 1px solid var(--critical)"></i>violation</button>
+      <button type="button" class="lg" data-layer="wrong" aria-pressed="true" title="Show or hide in the chart"><b class="sw-x">✗</b>wrong decision</button>
+    </div>
+    <div class="tlbar">
+      <span class="hint">click the legend to show or hide · drag to pan · mouse wheel or double click: zoom at cursor (Shift+double click zooms out) · keys + − 0 · click a cut for details</span>
+      <div class="zoom" role="group" aria-label="Timeline zoom">
+        <button type="button" id="zoomOut" title="Zoom out (key −)" aria-label="Zoom out">−</button>
+        <span class="level" id="zoomLevel" title="Visible range">12 s</span>
+        <button type="button" id="zoomIn" title="Zoom in (key +)" aria-label="Zoom in">+</button>
+        <button type="button" id="zoomFit" title="Show the whole run (key 0)">All</button>
+        <button type="button" id="zoomReset" title="Back to 12 s following live">Reset</button>
+      </div>
+    </div>
+    <canvas id="tl"></canvas>
+    <div class="tooltip" id="tip"></div>
+  </section>
+
+  <section class="card">
+    <div class="tape-head">
+      <h2>File mxOUT.txt</h2>
+      <span class="stats" id="tapestats">empty</span>
+      <label><input type="checkbox" id="tapeFollow" checked> follow the end</label>
+    </div>
+    <div class="tape" id="tape"><span class="empty">Start a run.</span></div>
+  </section>
+
+  <div class="grid2">
+    <section class="card">
+      <h2>Processes now</h2>
+      <div class="procs" id="procs"></div>
+    </section>
+    <section class="card">
+      <div class="snaps-head">
+        <h2>Snapshots</h2>
+        <label><input type="checkbox" id="onlybad"> violations only</label>
+      </div>
+      <div class="summary" id="snapsummary">no snapshots</div>
+      <div class="snaplist" id="snaplist"></div>
+      <div class="detail" id="detail"><span class="empty">Select a snapshot.</span></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <details id="logbox">
+      <summary>Events (table)</summary>
+      <div class="log"><table>
+        <thead><tr><th>t (s)</th><th>event</th><th>from</th><th>to</th><th>detail</th></tr></thead>
+        <tbody id="log"></tbody>
+      </table></div>
+    </details>
+  </section>
+</main>
+
+<script>
+"use strict";
+
+// ---------------------------------------------------------------------------
+// Run state, rebuilt from the server events
+// ---------------------------------------------------------------------------
+
+const STATE_LABEL = { noMX: "noMX", wantMX: "wantMX", inMX: "inMX" };
+let S = null;
+
+function reset(params) {
+  S = {
+    params,
+    running: true,
+    offset: null,           // performance.now() - t, estimate of the server clock
+    lastT: 0,
+    procs: Array.from({ length: params.n }, () => ({
+      segs: [{ st: "noMX", t0: 0, t1: null }],
+      reqTs: null, resps: 0, deferred: new Set(),
+    })),
+    msgs: [],               // {from, to, kind, ts, snap, t0, t1}
+    chan: new Map(),        // "from-to" → queue of messages sent and not yet delivered
+    snaps: new Map(),       // id → {id, rec: [], local: [], done, bad, procs, invs, t}
+    overlaps: [],           // intervals with more than one process in inMX
+    inCount: 0, overlapStart: null,
+    log: [],
+    tape: [],               // writes to the file, in file order: {t, p, ch, bad}
+    doubleBar: 0, doubleDot: 0,
+  };
+  selected = null;
+  tapeEl.innerHTML = "";
+  tapeDrawn = 0;
+  tapeMark = null;
+  follow = true;
+  viewEnd = 0;
+  $("follow").textContent = "Pause view";
+  dirtyPanels = true;
+}
+
+function now() {
+  if (!S || S.offset === null) return 0;
+  return S.running ? performance.now() - S.offset : S.lastT;
+}
+
+function snap(id) {
+  let s = S.snaps.get(id);
+  if (!s) {
+    s = { id, rec: new Array(S.params.n).fill(null), local: new Array(S.params.n).fill(null), done: false, bad: false };
+    S.snaps.set(id, s);
+  }
+  return s;
+}
+
+function handle(ev) {
+  if (ev.type === "session") { reset(ev.params); }
+  if (!S) return;
+  const t = ev.t;
+  const off = performance.now() - t;
+  S.offset = S.offset === null ? off : Math.min(S.offset, off);
+  S.lastT = Math.max(S.lastT, t);
+
+  switch (ev.type) {
+    case "state": {
+      const p = S.procs[ev.p];
+      const cur = p.segs[p.segs.length - 1];
+      cur.t1 = t;
+      p.segs.push({ st: ev.state, t0: t, t1: null });
+      if (cur.st === "inMX") S.inCount--;
+      if (ev.state === "inMX") S.inCount++;
+      if (S.inCount > 1 && S.overlapStart === null) S.overlapStart = t;
+      if (S.inCount <= 1 && S.overlapStart !== null) { S.overlaps.push([S.overlapStart, t]); S.overlapStart = null; }
+      if (ev.state === "wantMX") p.resps = 0;
+      if (ev.state === "noMX") { p.reqTs = null; p.resps = 0; }
+      log(t, "state", `p${ev.p}`, "", ev.state);
+      break;
+    }
+    case "send": {
+      const m = { from: ev.from, to: ev.to, kind: ev.kind, ts: ev.ts, snap: ev.snap, t0: t, t1: null };
+      S.msgs.push(m);
+      const key = ev.from + "-" + ev.to;
+      if (!S.chan.has(key)) S.chan.set(key, []);
+      S.chan.get(key).push(m);
+      if (ev.kind === "req") S.procs[ev.from].reqTs = ev.ts;
+      if (ev.kind === "ok") S.procs[ev.from].deferred.delete(ev.to);
+      if (ev.kind === "marker") { const s = snap(ev.snap); if (s.rec[ev.from] === null) s.rec[ev.from] = t; }
+      log(t, "send", `p${ev.from}`, `p${ev.to}`, msgText(m));
+      break;
+    }
+    case "deliver": {
+      const q = S.chan.get(ev.from + "-" + ev.to);
+      const m = q && q.shift(); // FIFO: the delivery matches the oldest pending send
+      if (m) m.t1 = t;
+      if (ev.kind === "req") S.procs[ev.to].deferred.add(ev.from); // removed when the ok is sent
+      if (ev.kind === "ok") S.procs[ev.to].resps++;
+      log(t, "deliver", `p${ev.from}`, `p${ev.to}`, msgText(ev));
+      break;
+    }
+    case "write": {
+      const w = { t, p: ev.p, ch: ev.ch, bad: false };
+      const prev = S.tape[S.tape.length - 1];
+      if (prev && prev.ch === w.ch) { // "||" or "..": two accesses overlapped
+        prev.bad = w.bad = true;
+        if (w.ch === "|") S.doubleBar++; else S.doubleDot++;
+      }
+      S.tape.push(w);
+      log(t, "write", `p${ev.p}`, "mxOUT", `"${ev.ch}"`);
+      break;
+    }
+    case "snaplocal":
+      snap(ev.id).local[ev.p] = t;
+      break;
+    case "snapshot": {
+      const s = snap(ev.id);
+      s.done = true; s.t = t; s.procs = ev.procs; s.invs = ev.invariants;
+      s.bad = ev.invariants.some(i => !i.ok);
+      log(t, "snapshot", "", "", `S${ev.id}: ` + (s.bad ? "violates " + badNames(s).join(", ") : "invariants ok"));
+      break;
+    }
+    case "stopped":
+      S.running = false;
+      S.lastT = t;
+      break;
+  }
+  dirtyPanels = true;
+}
+
+function msgText(m) {
+  if (m.kind === "req") return `req(ts=${m.ts})`;
+  if (m.kind === "marker") return `marker(S${m.snap})`;
+  return m.kind;
+}
+function badNames(s) { return s.invs.filter(i => !i.ok).map(i => i.name); }
+
+function log(t, what, from, to, detail) {
+  S.log.push([t, what, from, to, detail]);
+  if (S.log.length > 2000) S.log.splice(0, 1000);
+}
+
+// ---------------------------------------------------------------------------
+// Connection
+// ---------------------------------------------------------------------------
+
+const $ = id => document.getElementById(id);
+
+function connect() {
+  const es = new EventSource("/api/events");
+  es.onmessage = e => handle(JSON.parse(e.data));
+  es.onopen = () => { if (!S) setStatus("connected · no run"); };
+  es.onerror = () => setStatus("disconnected · reconnecting");
+}
+
+async function post(path, body) {
+  $("error").textContent = "";
+  const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
+  if (!r.ok) $("error").textContent = await r.text();
+}
+
+$("form").addEventListener("submit", e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const p = {};
+  for (const [k, v] of f) p[k] = k === "fault" ? v : Number(v);
+  post("/api/start", p);
+});
+// Changing the fault fills in parameters under which its effect shows up
+// quickly: mutex needs a long CS and frequent snapshots so that a cut catches
+// two processes in the CS; block needs requests that cross in the network.
+const PRESETS = {
+  none:  { latencyMs: 200, csMs: 800,  thinkMs: 900, snapEveryMs: 1000 },
+  mutex: { latencyMs: 150, csMs: 1000, thinkMs: 500, snapEveryMs: 500 },
+  block: { latencyMs: 400, csMs: 500,  thinkMs: 150, snapEveryMs: 800 },
+};
+$("form").fault.addEventListener("change", e => {
+  for (const [k, v] of Object.entries(PRESETS[e.target.value])) $("form")[k].value = v;
+});
+$("stop").onclick = () => post("/api/stop");
+$("snap").onclick = () => post("/api/snapshot");
+$("follow").onclick = () => {
+  if (!S) return;
+  follow = !follow;
+  if (!follow) viewEnd = now();
+  $("follow").textContent = follow ? "Pause view" : "Follow live";
+};
+$("onlybad").onchange = () => { dirtyPanels = true; };
+
+function setStatus(text) { $("status").innerHTML = text; }
+
+// ---------------------------------------------------------------------------
+// Timeline
+// ---------------------------------------------------------------------------
+
+const canvas = $("tl");
+const ctx = canvas.getContext("2d");
+const tip = $("tip");
+const M = { left: 52, right: 16, top: 30, bottom: 30, lane: 64 };
+let follow = true, viewEnd = 0, selected = null, dirtyPanels = true;
+let colors = {}, hover = null;
+
+// Chart layers toggled by the legend. The choice is stored in the viewer's
+// browser.
+const layers = { want: true, in: true, req: true, ok: true, marker: true, cut: true, viol: true, wrong: true };
+try { Object.assign(layers, JSON.parse(localStorage.getItem("dimex-viz-layers") || "{}")); } catch {}
+for (const b of document.querySelectorAll(".legend .lg")) {
+  b.setAttribute("aria-pressed", String(layers[b.dataset.layer]));
+  b.addEventListener("click", () => {
+    const k = b.dataset.layer;
+    layers[k] = !layers[k];
+    b.setAttribute("aria-pressed", String(layers[k]));
+    try { localStorage.setItem("dimex-viz-layers", JSON.stringify(layers)); } catch {}
+  });
+}
+
+function readColors() {
+  const cs = getComputedStyle(document.documentElement);
+  for (const k of ["surface", "ink", "ink-2", "muted", "grid", "axis", "req", "ok", "in", "want", "marker", "cut", "critical", "critical-wash"]) {
+    colors[k] = cs.getPropertyValue("--" + k).trim();
+  }
+}
+readColors();
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", readColors);
+
+// Visible range of the timeline, in ms. The "Window (s)" field and the zoom
+// bar show and change the same value.
+const MIN_SPAN = 200, MAX_SPAN = 3600e3, DEFAULT_SPAN = 12e3;
+let spanMs = DEFAULT_SPAN;
+
+function windowMs() { return spanMs; }
+
+function fmtSpan(ms) {
+  const s = ms / 1000;
+  if (s < 1) return Math.round(ms) + " ms";
+  if (s < 10) return s.toFixed(1) + " s";
+  if (s < 120) return Math.round(s) + " s";
+  return (s / 60).toFixed(1) + " min";
+}
+
+function setSpan(ms) {
+  spanMs = Math.min(MAX_SPAN, Math.max(MIN_SPAN, ms));
+  const s = spanMs / 1000;
+  $("window").value = s < 10 ? Number(s.toFixed(2)) : Math.round(s);
+  $("zoomLevel").textContent = fmtSpan(spanMs);
+}
+
+function pause() {
+  if (!follow) return;
+  follow = false;
+  viewEnd = now();
+  $("follow").textContent = "Follow live";
+}
+
+// zoomAt multiplies the visible range by factor, keeping fixed the instant at
+// position frac of the chart width (0 = left edge, 1 = right edge). While
+// following live, the right edge stays at the current instant.
+function zoomAt(factor, frac) {
+  if (!S) { setSpan(spanMs * factor); return; }
+  const { t0, t1 } = view();
+  const old = t1 - t0;
+  const next = Math.min(MAX_SPAN, Math.max(MIN_SPAN, old * factor));
+  if (!follow) {
+    const anchor = t0 + frac * old;
+    viewEnd = anchor + (1 - frac) * next;
+  }
+  setSpan(next);
+}
+
+function zoomFit() {
+  if (!S) return;
+  const end = Math.max(now(), 1000);
+  pause();
+  viewEnd = end + end * 0.02;
+  setSpan(viewEnd);
+}
+
+function zoomReset() {
+  setSpan(DEFAULT_SPAN);
+  follow = true;
+  $("follow").textContent = "Pause view";
+}
+
+$("window").addEventListener("change", e => setSpan((Number(e.target.value) || 12) * 1000));
+setSpan((Number($("window").value) || 12) * 1000); // the browser may restore the field on reload
+$("zoomIn").onclick = () => zoomAt(1 / 1.5, 0.5);
+$("zoomOut").onclick = () => zoomAt(1.5, 0.5);
+$("zoomFit").onclick = zoomFit;
+$("zoomReset").onclick = zoomReset;
+document.addEventListener("keydown", e => {
+  if (e.ctrlKey || e.metaKey || e.altKey || /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)) return;
+  if (e.key === "+" || e.key === "=") zoomAt(1 / 1.5, 0.5);
+  else if (e.key === "-" || e.key === "_") zoomAt(1.5, 0.5);
+  else if (e.key === "0") zoomFit();
+  else return;
+  e.preventDefault();
+});
+
+function layout() {
+  const n = S ? S.params.n : 3;
+  const w = canvas.clientWidth;
+  const h = M.top + n * M.lane + M.bottom;
+  const dpr = window.devicePixelRatio || 1;
+  if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    canvas.style.height = h + "px";
+  }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { w, h, n };
+}
+
+function view() {
+  const span = windowMs();
+  const end = follow ? Math.max(now(), span) : viewEnd;
+  return { t0: end - span, t1: end };
+}
+
+function draw() {
+  const { w, h, n } = layout();
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = colors.surface;
+  ctx.fillRect(0, 0, w, h);
+  if (!S) {
+    ctx.fillStyle = colors.muted;
+    ctx.font = "13px system-ui, sans-serif";
+    ctx.fillText("Start a run.", M.left, M.top + 30);
+    return;
+  }
+  const { t0, t1 } = view();
+  const plotW = w - M.left - M.right;
+  const X = t => M.left + (t - t0) / (t1 - t0) * plotW;
+  const Y = p => M.top + (p + 0.5) * M.lane;
+  const tNow = now();
+  const hits = [];
+
+  // time axis and grid
+  const step = niceStep((t1 - t0) / Math.max(2, plotW / 90));
+  ctx.font = "11px system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.lineWidth = 1;
+  for (let t = Math.ceil(t0 / step) * step; t <= t1; t += step) {
+    const x = Math.round(X(t)) + 0.5;
+    ctx.strokeStyle = colors.grid;
+    ctx.beginPath(); ctx.moveTo(x, M.top - 6); ctx.lineTo(x, h - M.bottom); ctx.stroke();
+    ctx.fillStyle = colors.muted;
+    ctx.fillText((t / 1000).toFixed(step < 1000 ? 1 : 0) + "s", x, h - M.bottom + 16);
+  }
+
+  ctx.save();
+  ctx.beginPath(); ctx.rect(M.left, 0, plotW, h); ctx.clip();
+
+  // intervals with two or more processes in the CS
+  const overlaps = S.overlapStart !== null ? [...S.overlaps, [S.overlapStart, tNow]] : S.overlaps;
+  for (const [a, b] of overlaps) {
+    if (!layers.viol || b < t0 || a > t1) continue;
+    const xa = X(a), xb = Math.max(X(b), xa + 2);
+    ctx.fillStyle = colors["critical-wash"];
+    ctx.fillRect(xa, M.top - 6, xb - xa, n * M.lane + 6);
+    ctx.fillStyle = colors.critical;
+    ctx.fillRect(xa, M.top - 6, xb - xa, 3);
+    hits.push({ kind: "overlap", x0: xa, x1: xb, y0: M.top - 6, y1: M.top + n * M.lane, a, b });
+  }
+
+  // state bands
+  for (let p = 0; p < n; p++) {
+    const y = Y(p);
+    ctx.strokeStyle = colors.axis;
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(M.left, y); ctx.lineTo(w - M.right, y); ctx.stroke();
+    for (const s of S.procs[p].segs) {
+      const e = s.t1 === null ? tNow : s.t1;
+      if (s.st === "noMX" || e < t0 || s.t0 > t1) continue;
+      if (!layers[s.st === "inMX" ? "in" : "want"]) continue;
+      const xa = X(s.t0), xb = Math.max(X(e), xa + 2);
+      ctx.fillStyle = s.st === "inMX" ? colors.in : colors.want;
+      roundRect(xa, y - 7, xb - xa, 14, 4);
+      if (xb - xa > 50) {
+        ctx.fillStyle = "#0b0b0b";
+        ctx.font = "600 10px system-ui, sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText(s.st === "inMX" ? "in CS" : "wants CS", xa + 5, y + 3.5);
+      }
+      hits.push({ kind: "seg", p, s, e, x0: xa, x1: xb, y0: y - 9, y1: y + 9 });
+    }
+  }
+
+  // messages: req and ok below the cuts; markers on top (after the cuts),
+  // because the marker that makes a process record its state coincides with
+  // a segment of the cut
+  const lo = lowerBound(S.msgs, t0 - 60000);
+  const visible = [];
+  for (let i = lo; i < S.msgs.length; i++) {
+    const m = S.msgs[i];
+    if (m.t0 > t1) break;
+    if (layers[m.kind] && (m.t1 === null ? tNow : m.t1) >= t0) visible.push(m);
+  }
+  const drawMsg = m => {
+    const xa = X(m.t0), ya = Y(m.from);
+    let xb = X(m.t1 === null ? tNow : m.t1), yb = Y(m.to);
+    if (m.t1 === null) { // in transit: drawn up to where it would be now
+      const lat = Math.max(1, S.params.latencyMs);
+      const f = Math.min(0.95, (tNow - m.t0) / lat);
+      yb = ya + (yb - ya) * f;
+    }
+    const marker = m.kind === "marker";
+    const lw = hover && hover.m === m ? 3 : 1.5;
+    ctx.globalAlpha = m.t1 === null ? 0.55 : 1;
+    const color = colors[m.kind] || colors.ink;
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = lw;
+    ctx.setLineDash(marker ? [5, 3] : []);
+    ctx.beginPath(); ctx.moveTo(xa, ya); ctx.lineTo(xb, yb); ctx.stroke();
+    ctx.setLineDash([]);
+    if (m.t1 !== null) arrowHead(xa, ya, xb, yb);
+    ctx.globalAlpha = 1;
+    if (m.wrong && layers.wrong) wrongMark((xa + xb) / 2, (ya + yb) / 2);
+    hits.push({ kind: "msg", m, xa, ya, xb, yb });
+  };
+  // Evaluates each delivered req once, after the margin within which an
+  // immediate ok would already have been sent. A wrong decision is marked on
+  // the arrow that shows it: on the ok sent when the process should have
+  // deferred, or on the deferred req when it should have replied.
+  for (const m of visible) {
+    if (m.kind !== "req" || m.t1 === null || m.dec !== undefined || tNow - m.t1 < 4 * DECISION_WINDOW) continue;
+    m.dec = decision(m);
+    if (m.dec.wrong) (m.dec.ok || m).wrong = true;
+  }
+  for (const m of visible) if (m.kind !== "marker") drawMsg(m);
+
+  // snapshot cuts
+  for (const s of layers.cut ? S.snaps.values() : []) {
+    const pts = s.rec.map((t, p) => t === null ? null : [X(t), Y(p)]);
+    if (pts.every(pt => pt === null)) continue;
+    const xs = pts.filter(Boolean).map(pt => pt[0]);
+    if (Math.max(...xs) < M.left - 40 || Math.min(...xs) > w) continue;
+    const color = s.bad ? colors.critical : colors.cut;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = selected === s.id || (hover && hover.snap === s) ? 4 : 2.5;
+    ctx.globalAlpha = s.done ? 1 : 0.5;
+    ctx.beginPath();
+    let started = false;
+    for (const pt of pts) {
+      if (!pt) continue;
+      if (!started) { ctx.moveTo(pt[0], pt[1] - 14); ctx.lineTo(pt[0], pt[1]); started = true; }
+      else ctx.lineTo(pt[0], pt[1]);
+    }
+    const last = pts.filter(Boolean).pop();
+    ctx.lineTo(last[0], last[1] + 14);
+    ctx.stroke();
+    for (const pt of pts) if (pt) { ctx.beginPath(); ctx.arc(pt[0], pt[1], 4, 0, 2 * Math.PI); ctx.fillStyle = color; ctx.fill(); }
+    ctx.globalAlpha = 1;
+    const first = pts.find(Boolean);
+    ctx.font = "600 11px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillStyle = s.bad ? colors.critical : colors["ink-2"];
+    ctx.fillText(`S${s.id}` + (s.bad ? " ⚠ " + badNames(s).join(",") : ""), first[0], M.top - 12);
+    hits.push({ kind: "snap", snap: s, pts: pts.filter(Boolean) });
+  }
+  for (const m of visible) if (m.kind === "marker") drawMsg(m);
+  ctx.restore();
+
+  // instant of the tape character under the mouse
+  if (tapeMark && tapeMark.t >= t0 && tapeMark.t <= t1) {
+    const x = X(tapeMark.t), y = Y(tapeMark.p);
+    ctx.strokeStyle = colors.ink;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath(); ctx.moveTo(x, M.top - 6); ctx.lineTo(x, h - M.bottom); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = colors.surface;
+    ctx.beginPath(); ctx.arc(x, y, 11, 0, 2 * Math.PI); ctx.fill();
+    ctx.strokeStyle = colors.ink;
+    ctx.stroke();
+    ctx.fillStyle = colors.ink;
+    ctx.font = "700 14px ui-monospace, monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(tapeMark.ch, x, y + 5);
+  }
+
+  // lane labels
+  ctx.textAlign = "left";
+  for (let p = 0; p < n; p++) {
+    ctx.fillStyle = colors.ink;
+    ctx.font = "600 13px system-ui, sans-serif";
+    ctx.fillText(`p${p}`, 10, Y(p) + 4);
+  }
+
+  // "now" line
+  if (S.running && follow) {
+    const x = X(tNow);
+    ctx.strokeStyle = colors.muted;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([2, 3]);
+    ctx.beginPath(); ctx.moveTo(x, M.top - 6); ctx.lineTo(x, h - M.bottom); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  draw.hits = hits;
+}
+
+function roundRect(x, y, w, h, r) {
+  r = Math.min(r, w / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); ctx.fill();
+}
+
+// wrongMark draws a red x outlined in the background color.
+function wrongMark(x, y) {
+  const r = 5;
+  ctx.lineCap = "round";
+  for (const [color, lw] of [[colors.surface, 5.5], [colors.critical, 2.5]]) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lw;
+    ctx.beginPath();
+    ctx.moveTo(x - r, y - r); ctx.lineTo(x + r, y + r);
+    ctx.moveTo(x + r, y - r); ctx.lineTo(x - r, y + r);
+    ctx.stroke();
+  }
+  ctx.lineCap = "butt";
+}
+
+function arrowHead(xa, ya, xb, yb) {
+  const a = Math.atan2(yb - ya, xb - xa), s = 7;
+  ctx.beginPath();
+  ctx.moveTo(xb, yb);
+  ctx.lineTo(xb - s * Math.cos(a - 0.4), yb - s * Math.sin(a - 0.4));
+  ctx.lineTo(xb - s * Math.cos(a + 0.4), yb - s * Math.sin(a + 0.4));
+  ctx.closePath(); ctx.fill();
+}
+
+function niceStep(raw) {
+  const steps = [50, 100, 200, 250, 500, 1000, 2000, 5000, 10000, 15000, 30000, 60000, 120000, 300000];
+  return steps.find(s => s >= raw) || 600000;
+}
+
+function lowerBound(arr, t) {
+  let lo = 0, hi = arr.length;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (arr[mid].t0 < t) lo = mid + 1; else hi = mid; }
+  return lo;
+}
+
+// ---------------------------------------------------------------------------
+// Interaction: hover, drag, zoom, click
+// ---------------------------------------------------------------------------
+
+function distSeg(px, py, xa, ya, xb, yb) {
+  const dx = xb - xa, dy = yb - ya, l2 = dx * dx + dy * dy;
+  const u = l2 === 0 ? 0 : Math.max(0, Math.min(1, ((px - xa) * dx + (py - ya) * dy) / l2));
+  return Math.hypot(px - xa - u * dx, py - ya - u * dy);
+}
+
+// pick returns the elements under the cursor, topmost first: markers (drawn
+// above everything), then cuts, then the other messages. State bands and
+// violation intervals are returned only when no line is nearby.
+const LINE_TOL = 6;
+function pick(px, py) {
+  const lines = [], areas = [];
+  for (const h of draw.hits || []) {
+    if (h.kind === "msg" || h.kind === "snap") {
+      let d = Infinity;
+      if (h.kind === "msg") d = distSeg(px, py, h.xa, h.ya, h.xb, h.yb);
+      else for (let i = 0; i < h.pts.length; i++) {
+        const a = h.pts[i], b = h.pts[i + 1] || a;
+        d = Math.min(d, distSeg(px, py, a[0], a[1], b[0], b[1]));
+      }
+      const layer = h.kind === "snap" ? 1 : h.m.kind === "marker" ? 0 : 2;
+      if (d <= LINE_TOL) lines.push({ h, d: d + 3 * layer });
+    } else if (px >= h.x0 && px <= h.x1 && py >= h.y0 && py <= h.y1) {
+      areas.push({ h, d: h.kind === "seg" ? 0 : 1 });
+    }
+  }
+  const found = lines.length ? lines : areas;
+  return found.sort((a, b) => a.d - b.d).map(x => x.h);
+}
+
+// ---------------------------------------------------------------------------
+// Decision to reply to or defer a request
+//
+// When the req from q reaches p, p either replies ok immediately or defers
+// until it leaves the CS. The correct rule (shouldDefer in
+// internal/dimex/dimex.go without a fault):
+//   inMX                   → defer
+//   wantMX with priority   → defer   (priority: smaller (ts, id))
+//   otherwise              → reply
+// The page rebuilds the state of p at the delivery instant from the events
+// and compares the rule with what p did.
+// ---------------------------------------------------------------------------
+
+// An immediate reply is sent in the same step in which the request is
+// handled, right after the delivery. This margin, in ms, only covers the time
+// between the two events.
+const DECISION_WINDOW = 5;
+
+function before(ts1, id1, ts2, id2) { return ts1 !== ts2 ? ts1 < ts2 : id1 < id2; }
+
+function segAt(p, t) {
+  const segs = S.procs[p].segs;
+  for (let i = segs.length - 1; i >= 0; i--) if (segs[i].t0 <= t) return { seg: segs[i], i };
+  return { seg: segs[0], i: 0 };
+}
+
+// requestAt returns the state of p at instant t and, if p had a pending
+// request, its timestamp (the req p sent in the current wantMX or in the
+// wantMX that preceded the current inMX).
+function requestAt(p, t) {
+  const { seg, i } = segAt(p, t);
+  if (seg.st === "noMX") return { st: "noMX" };
+  const segs = S.procs[p].segs;
+  const wantStart = seg.st === "wantMX" || i === 0 ? seg.t0 : segs[i - 1].t0;
+  let ts = null;
+  for (let k = lowerBound(S.msgs, wantStart); k < S.msgs.length && S.msgs[k].t0 <= t; k++) {
+    const m = S.msgs[k];
+    if (m.kind === "req" && m.from === p) ts = m.ts;
+  }
+  // the application marks wantMX shortly before the module sends the request
+  if (ts === null) return { st: "noMX" };
+  return { st: seg.st, ts };
+}
+
+// decision evaluates what p did with the req delivered to it.
+function decision(req) {
+  if (req.kind !== "req" || req.t1 === null) return null;
+  const p = req.to, q = req.from, t = req.t1;
+  const ctx = requestAt(p, t);
+  const mine = ctx.st === "wantMX" && before(ctx.ts, p, req.ts, q);
+  const shouldDefer = ctx.st === "inMX" || mine;
+
+  let ok = null;
+  for (let k = lowerBound(S.msgs, t - 0.5); k < S.msgs.length && S.msgs[k].t0 <= t + DECISION_WINDOW; k++) {
+    const m = S.msgs[k];
+    if (m.kind === "ok" && m.from === p && m.to === q) { ok = m; break; }
+  }
+  // if p changed state between the delivery and the ok, the ok is the deferred reply sent on leaving the CS
+  if (ok && segAt(p, ok.t0).seg !== segAt(p, t).seg) ok = null;
+  return { p, q, req, ctx, mine, shouldDefer, ok, wrong: shouldDefer === (ok !== null) };
+}
+
+function decisionText(d) {
+  const P = `p${d.p}`, Q = `p${d.q}`;
+  const act = d.ok ? "replied ok immediately" : "deferred (replies on leaving the CS)";
+  let why;
+  if (d.ctx.st === "noMX") why = `${P} did not want the CS`;
+  else if (d.ctx.st === "inMX") why = `${P} was in the CS`;
+  else why = `${P} wanted the CS: (ts=${d.ctx.ts}, ${P}) ${d.mine ? "<" : ">"} (ts=${d.req.ts}, ${Q}),\n` +
+    `priority to ${d.mine ? P : Q}`;
+  const verdict = d.wrong
+    ? `✗ WRONG DECISION: should have ${d.shouldDefer ? "deferred" : "replied immediately"}`
+    : "✓ correct decision";
+  return `decision of ${P}: ${act}\n${why}\n${verdict}`;
+}
+
+// answeredReq returns the req that the ok answers: the last req from the ok's
+// receiver delivered to the ok's sender before the send.
+function answeredReq(ok) {
+  for (let k = lowerBound(S.msgs, ok.t0 + 0.01) - 1; k >= 0; k--) {
+    const m = S.msgs[k];
+    if (m.kind === "req" && m.from === ok.to && m.to === ok.from && m.t1 !== null && m.t1 <= ok.t0 + 0.01) return m;
+  }
+  return null;
+}
+
+function tipText(h) {
+  const s = v => (v / 1000).toFixed(3) + "s";
+  if (h.kind === "msg") {
+    const m = h.m;
+    let text = `${msgText(m)}  p${m.from} → p${m.to}\nsent at ${s(m.t0)}\n` +
+      (m.t1 === null ? "in transit" : `delivered at ${s(m.t1)}`);
+    if (m.kind === "req" && m.t1 !== null) {
+      text += "\n\n" + decisionText(decision(m));
+    } else if (m.kind === "ok") {
+      const req = answeredReq(m);
+      const d = req && decision(req);
+      if (d && d.ok === m) text += `\n\nreply to req(ts=${req.ts}) from p${m.to}\n` + decisionText(d);
+      else if (d) text += `\n\ndeferred reply to req(ts=${req.ts}) from p${m.to},\nsent when p${m.from} left the CS\n` + decisionText(d);
+    }
+    return text;
+  }
+  if (h.kind === "seg") {
+    return `p${h.p}: ${STATE_LABEL[h.s.st]}\nfrom ${s(h.s.t0)} to ${h.s.t1 === null ? "now" : s(h.s.t1)}`;
+  }
+  if (h.kind === "overlap") return `⚠ more than one process in the CS\nfrom ${s(h.a)} to ${s(h.b)}`;
+  const sn = h.snap;
+  if (!sn.done) return `S${sn.id}: in progress`;
+  return `S${sn.id}: ` + (sn.bad ? "⚠ violates " + badNames(sn).join(", ") : "all invariants ok") + "\nclick for details";
+}
+
+let drag = null;
+canvas.addEventListener("pointermove", e => {
+  const r = canvas.getBoundingClientRect();
+  const px = e.clientX - r.left, py = e.clientY - r.top;
+  if (drag) {
+    const { t0, t1 } = view();
+    const perPx = (t1 - t0) / (r.width - M.left - M.right);
+    viewEnd = drag.end - (px - drag.x) * perPx;
+    return;
+  }
+  hover = pick(px, py)[0] || null;
+  if (hover) {
+    tip.textContent = tipText(hover);
+    tip.style.display = "block";
+    const tw = tip.offsetWidth;
+    tip.style.left = Math.min(px + 14, r.width - tw - 8) + "px";
+    tip.style.top = (py + 38) + "px";
+    canvas.style.cursor = hover.kind === "snap" ? "pointer" : "default";
+  } else {
+    tip.style.display = "none";
+    canvas.style.cursor = S ? "grab" : "default";
+  }
+});
+canvas.addEventListener("pointerleave", () => { hover = null; tip.style.display = "none"; });
+canvas.addEventListener("pointerdown", e => {
+  if (!S) return;
+  const r = canvas.getBoundingClientRect();
+  const h = pick(e.clientX - r.left, e.clientY - r.top).find(h => h.kind === "snap");
+  if (h) { select(h.snap.id); return; }
+  pause();
+  drag = { x: e.clientX - r.left, end: viewEnd };
+  canvas.setPointerCapture(e.pointerId);
+  canvas.style.cursor = "grabbing";
+});
+canvas.addEventListener("pointerup", () => { drag = null; });
+function cursorFrac(e) {
+  const r = canvas.getBoundingClientRect();
+  const plotW = r.width - M.left - M.right;
+  return Math.min(1, Math.max(0, (e.clientX - r.left - M.left) / plotW));
+}
+
+canvas.addEventListener("wheel", e => {
+  if (!S) return;
+  e.preventDefault();
+  if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) { // horizontal touchpad scroll: pans
+    pause();
+    const r = canvas.getBoundingClientRect();
+    viewEnd += e.deltaX * windowMs() / (r.width - M.left - M.right);
+    return;
+  }
+  zoomAt(e.deltaY > 0 ? 1.15 : 1 / 1.15, cursorFrac(e));
+}, { passive: false });
+
+canvas.addEventListener("dblclick", e => {
+  if (!S) return;
+  pause();
+  zoomAt(e.shiftKey ? 2 : 0.5, cursorFrac(e));
+});
+
+// ---------------------------------------------------------------------------
+// Panels
+// ---------------------------------------------------------------------------
+
+function select(id) {
+  selected = id;
+  dirtyPanels = true;
+  const s = S.snaps.get(id);
+  if (s && s.rec.some(t => t !== null)) { // centers the cut in the timeline
+    const ts = s.rec.filter(t => t !== null);
+    pause();
+    viewEnd = (Math.min(...ts) + Math.max(...ts)) / 2 + windowMs() / 2;
+  }
+}
+
+function esc(s) { return String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]); }
+
+function chip(st) {
+  const c = st === "inMX" ? "var(--in)" : st === "wantMX" ? "var(--want)" : "var(--axis)";
+  return `<span class="chip"><i style="background:${c}"></i>${STATE_LABEL[st] || st}</span>`;
+}
+
+function renderPanels() {
+  if (!S) { $("procs").innerHTML = ""; return; }
+  const n = S.params.n;
+  const inTransit = new Array(n).fill(0);
+  for (const q of S.chan.values()) for (const m of q) inTransit[m.to]++;
+  $("procs").innerHTML = S.procs.map((p, i) => {
+    const st = p.segs[p.segs.length - 1].st;
+    const deferred = [...p.deferred].sort().map(q => "p" + q).join(", ") || "—";
+    return `<div class="proc"><div class="name">p${i} ${chip(st)}</div><dl>
+      <dt>request</dt><dd>${p.reqTs === null ? "—" : "ts=" + p.reqTs}</dd>
+      <dt>replies</dt><dd>${st === "noMX" ? "—" : p.resps + " of " + (n - 1)}</dd>
+      <dt>deferred</dt><dd>${deferred}</dd>
+      <dt>incoming</dt><dd>${inTransit[i]} message${inTransit[i] === 1 ? "" : "s"}</dd></dl></div>`;
+  }).join("");
+
+  const all = [...S.snaps.values()].filter(s => s.done).sort((a, b) => b.id - a.id);
+  const bad = all.filter(s => s.bad);
+  $("snapsummary").innerHTML = all.length === 0 ? "no complete snapshots" :
+    `${all.length} complete · ` + (bad.length ? `<span class="bad">⚠ ${bad.length} with violations</span>` : "no violations");
+  const rows = ($("onlybad").checked ? bad : all).slice(0, 400);
+  $("snaplist").innerHTML = rows.map(s => `<div class="snaprow${s.id === selected ? " sel" : ""}" data-id="${s.id}">
+      <span class="id">S${s.id}</span><span class="t">${(s.t / 1000).toFixed(2)}s</span>
+      <span class="res${s.bad ? " bad" : ""}">${s.bad ? "⚠ " + badNames(s).join(", ") : "✓ invariants ok"}</span></div>`).join("");
+
+  const s = selected !== null && S.snaps.get(selected);
+  if (!s) { $("detail").innerHTML = `<span class="empty">Select a snapshot in the list or click a cut.</span>`; }
+  else if (!s.done) { $("detail").innerHTML = `<span class="empty">S${s.id} still in progress.</span>`; }
+  else {
+    const procRows = s.procs.map(p => {
+      const w = p.waiting.map((v, q) => v ? "p" + q : null).filter(Boolean).join(", ") || "—";
+      const ch = Object.entries(p.channels).filter(([, ms]) => ms.length)
+        .map(([q, ms]) => `p${q}→p${p.process}: ${ms.map(msgText).join(", ")}`).join("<br>") || "—";
+      return `<tr><td>p${p.process}</td><td>${chip(p.state)}</td><td>${p.reqTs || "—"}</td><td>${p.resps}</td><td>${w}</td><td>${ch}</td></tr>`;
+    }).join("");
+    const invs = s.invs.map(i => `<div class="inv ${i.ok ? "ok" : "bad"}"><span class="mark">${i.ok ? "✓" : "✗"}</span><span class="nm">${i.name}</span><span>${esc(i.desc)}</span></div>`).join("");
+    $("detail").innerHTML = `<table><thead><tr><th>proc.</th><th>state</th><th>reqTs</th><th>resps</th><th>deferred</th><th>messages in transit</th></tr></thead>
+      <tbody>${procRows}</tbody></table><div class="invs">${invs}</div>`;
+  }
+
+  if ($("logbox").open) {
+    $("log").innerHTML = S.log.slice(-300).reverse().map(r =>
+      `<tr><td>${(r[0] / 1000).toFixed(3)}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${esc(r[4])}</td></tr>`).join("");
+  }
+
+  const p = S.params;
+  setStatus(`${S.running ? "<b>running</b>" : "<b>stopped</b>"} · ${p.n} processes · fault <b>${p.fault}</b> · ` +
+    `latency ${p.latencyMs} ms · t = ${(now() / 1000).toFixed(1)}s`);
+}
+
+$("snaplist").addEventListener("click", e => {
+  const row = e.target.closest(".snaprow");
+  if (row) select(Number(row.dataset.id));
+});
+$("logbox").addEventListener("toggle", () => { dirtyPanels = true; });
+
+// ---------------------------------------------------------------------------
+// Tape of the file mxOUT.txt
+// ---------------------------------------------------------------------------
+
+const tapeEl = $("tape");
+let tapeDrawn = 0, tapeMark = null;
+
+function renderTape() {
+  if (!S) return;
+  if (S.tape.length === 0) {
+    if (tapeDrawn === 0) tapeEl.innerHTML = `<span class="empty">No writes yet.</span>`;
+    $("tapestats").textContent = "empty";
+    return;
+  }
+  if (tapeDrawn === 0) tapeEl.innerHTML = "";
+
+  // appends only the new characters
+  const frag = document.createDocumentFragment();
+  for (; tapeDrawn < S.tape.length; tapeDrawn++) {
+    const w = S.tape[tapeDrawn];
+    const el = document.createElement("span");
+    el.className = "cell" + (w.ch === "." ? " dot" : "");
+    el.dataset.i = tapeDrawn;
+    el.title = `p${w.p} wrote "${w.ch}" at ${(w.t / 1000).toFixed(3)}s`;
+    el.innerHTML = `${w.ch}<sub>p${w.p}</sub>`;
+    w.el = el;
+    frag.appendChild(el);
+  }
+  const atEnd = tapeEl.scrollLeft + tapeEl.clientWidth >= tapeEl.scrollWidth - 30;
+  tapeEl.appendChild(frag);
+
+  // violations and range visible in the timeline
+  const { t0, t1 } = view();
+  for (const w of S.tape) {
+    w.el.classList.toggle("bad", w.bad);
+    w.el.classList.toggle("out", w.t < t0 || w.t > t1);
+  }
+  if ($("tapeFollow").checked && (atEnd || follow)) tapeEl.scrollLeft = tapeEl.scrollWidth;
+
+  const bars = S.tape.filter(w => w.ch === "|").length;
+  const viol = S.doubleBar + S.doubleDot;
+  $("tapestats").innerHTML = `${S.tape.length} characters · ${bars} accesses · ` +
+    (viol === 0 ? `<span class="good">✓ no "||" or ".."</span>`
+                : `<span class="bad">⚠ "||": ${S.doubleBar} · "..": ${S.doubleDot}</span>`);
+}
+
+function tapeEntry(e) {
+  const el = e.target.closest(".cell");
+  return el && S ? S.tape[Number(el.dataset.i)] : null;
+}
+tapeEl.addEventListener("mouseover", e => {
+  const w = tapeEntry(e);
+  tapeMark = w ? { t: w.t, p: w.p, ch: w.ch } : null;
+});
+tapeEl.addEventListener("mouseleave", () => { tapeMark = null; });
+tapeEl.addEventListener("click", e => {
+  const w = tapeEntry(e);
+  if (!w) return;
+  pause();
+  viewEnd = w.t + windowMs() / 2;
+});
+
+let lastPanels = 0;
+function frame(ts) {
+  draw();
+  if (dirtyPanels && ts - lastPanels > 250) { renderPanels(); renderTape(); dirtyPanels = false; lastPanels = ts; }
+  else if (S && ts - lastPanels > 250) { if (S.running) renderPanels(); renderTape(); lastPanels = ts; }
+  requestAnimationFrame(frame);
+}
+
+connect();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
